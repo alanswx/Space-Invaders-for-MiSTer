@@ -18,7 +18,6 @@
 //  with this program; if not, write to the Free Software Foundation, Inc.,
 //  51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 //============================================================================
-
 module emu
 (
 	//Master input clock
@@ -44,6 +43,7 @@ module emu
 	output        VGA_HS,
 	output        VGA_VS,
 	output        VGA_DE,    // = ~(VBlank | HBlank)
+	output        VGA_F1,
 
 	//Base video clock. Usually equals to CLK_SYS.
 	output        HDMI_CLK,
@@ -74,19 +74,34 @@ module emu
 
 	output [15:0] AUDIO_L,
 	output [15:0] AUDIO_R,
-	output        AUDIO_S    // 1 - signed audio samples, 0 - unsigned
+	output        AUDIO_S,    // 1 - signed audio samples, 0 - unsigned
+	
+	
+		// Open-drain User port.
+	// 0 - D+/RX
+	// 1 - D-/TX
+	// 2..6 - USR2..USR6
+	// Set USER_OUT to 1 to read from USER_IN.
+	input   [6:0] USER_IN,
+	output  [6:0] USER_OUT
+
 );
 
+assign VGA_F1    = 0;
+assign USER_OUT  = '1;
 assign LED_USER  = ioctl_download;
 assign LED_DISK  = 0;
 assign LED_POWER = 0;
 
-assign HDMI_ARX = status[1] ? 8'd16 : status[2] ? 8'd4 : 8'd1;
-assign HDMI_ARY = status[1] ? 8'd9  : status[2] ? 8'd3 : 8'd1;
+assign HDMI_ARX = status[1] ? 8'd16 : status[2] ? 8'd4 : 8'd3;
+assign HDMI_ARY = status[1] ? 8'd9  : status[2] ? 8'd3 : 8'd4;
+
+
 
 `include "build_id.v" 
 localparam CONF_STR = {
 	"A.INVADERS;;",
+	"F,rom;", // allow loading of alternate ROMs
 	"-;",
 	"O1,Aspect Ratio,Original,Wide;", 
 	"O2,Orientation,Vert,Horz;",
@@ -98,9 +113,9 @@ localparam CONF_STR = {
 	"-;",
 	"O9A,Colours,Original,colour1,colour2,colour3;",
 	"-;",
-	"T6,Reset;",
-	"J,Fire,Start 1P,Start 2P;",
-	"V,v2.00.",`BUILD_DATE
+	"R0,Reset;",
+	"J1,Fire,Start 1P,Start 2P;",
+	"V,v",`BUILD_DATE
 };
 
 ////////////////////   CLOCKS   ///////////////////
@@ -181,6 +196,17 @@ always @(posedge clk_sys) begin
 			'hX6B: btn_left      	<= pressed; // left arrow
 			'hX74: btn_right      	<= pressed; // right arrow
 			'h004: btn_coin  			<= pressed; // F3
+			// JPAC/IPAC/MAME Style Codes
+			'h005: btn_one_player  <= pressed; // F1
+			'h006: btn_two_players <= pressed; // F2
+			'h016: btn_start_1     <= pressed; // 1
+			'h01E: btn_start_2     <= pressed; // 2
+			'h02E: btn_coin      <= pressed; // 5
+			'h036: btn_coin      <= pressed; // 6
+			//'h023: btn_left_2      <= pressed; // D
+			//'h034: btn_right_2     <= pressed; // G
+			//'h01C: btn_fire_2      <= pressed; // A
+			//'h02C: btn_test        <= pressed; // T
 		endcase
 	end
 end
@@ -221,6 +247,11 @@ always @(posedge clk_sys) begin
 				 end
 	endcase
 end
+
+
+reg btn_start_1=0;
+reg btn_start_2=0;
+
 
 reg btn_right = 0;
 reg btn_left = 0;
@@ -277,7 +308,7 @@ assign AUDIO_L = {audio, audio};
 assign AUDIO_R = AUDIO_L;
 assign AUDIO_S = 0;
 wire reset;
-assign reset = (RESET | status[0] | status[6] | buttons[1] | ioctl_download);
+assign reset = (RESET | status[0] | buttons[1] | ioctl_download);
 
 invaders_top invaders_top
 (
@@ -312,8 +343,8 @@ invaders_top invaders_top
 	.newbonus(newbonus),
 	.bases(bases),
 	.btn_coin(btn_coin | joy[5] | joy[6] | btn_one_player | btn_two_players),
-	.btn_one_player(btn_one_player | joy[5]),
-	.btn_two_player(btn_two_players | joy[6]),
+	.btn_one_player(btn_one_player|btn_start_1 | joy[5]),
+	.btn_two_player(btn_two_players|btn_start_2 | joy[6]),
 
 	.btn_fire(btn_fire | joy[4]),
 	.btn_right(btn_right | joy[0]),

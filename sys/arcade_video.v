@@ -22,7 +22,7 @@
 // Output timings are incompatible with any TV/VGA mode.
 // The output is supposed to be send to scaler input.
 //
-module screen_rotate #(parameter WIDTH=320, HEIGHT=240, DEPTH=8, MARGIN=8, CCW=0)
+module screen_rotate #(parameter WIDTH=320, HEIGHT=240, DEPTH=8, MARGIN=4, CCW=0)
 (
 	input              clk,
 	input              ce,
@@ -138,7 +138,7 @@ always @(posedge clk) begin
 			
 			old_buff <= buff;
 			if(old_buff != buff) begin
-				addr_out <= old_buff ? {aw{1'b0}} : bufsize[aw-1:0];
+				addr_out <= buff ? {aw{1'b0}} : bufsize[aw-1:0];
 				yposo <= 0;
 				vsync <= 0;
 				vbcnt <= 0;
@@ -180,7 +180,7 @@ module arcade_rotate_fx #(parameter WIDTH=320, HEIGHT=240, DW=8, CCW=0)
 	input         VSync,
 
 	output        VGA_CLK,
-	output        VGA_CE,
+	output reg    VGA_CE,
 	output  [7:0] VGA_R,
 	output  [7:0] VGA_G,
 	output  [7:0] VGA_B,
@@ -204,10 +204,15 @@ module arcade_rotate_fx #(parameter WIDTH=320, HEIGHT=240, DW=8, CCW=0)
 );
 
 assign VGA_CLK = clk_video;
-assign VGA_CE = ce_pix;
 assign VGA_HS = HSync;
 assign VGA_VS = VSync;
 assign VGA_DE = ~(HBlank | VBlank);
+
+always @(posedge VGA_CLK) begin
+	reg old_ce;
+	old_ce <= ce_pix;
+	VGA_CE <= ~old_ce & ce_pix;
+end
 
 generate
 	if(DW == 6) begin
@@ -235,7 +240,7 @@ endgenerate
 wire [DW-1:0] RGB_out;
 wire rhs,rvs,rhblank,rvblank;
 
-screen_rotate #(WIDTH,HEIGHT,DW,8,CCW) rotator
+screen_rotate #(WIDTH,HEIGHT,DW,4,CCW) rotator
 (
 	.clk(VGA_CLK),
 	.ce(VGA_CE),
@@ -330,7 +335,7 @@ module arcade_fx #(parameter WIDTH=320, DW=8)
 	input         VSync,
 
 	output        VGA_CLK,
-	output        VGA_CE,
+	output reg    VGA_CE,
 	output  [7:0] VGA_R,
 	output  [7:0] VGA_G,
 	output  [7:0] VGA_B,
@@ -353,10 +358,15 @@ module arcade_fx #(parameter WIDTH=320, DW=8)
 );
 
 assign VGA_CLK = clk_video;
-assign VGA_CE = ce_pix;
 assign VGA_HS = HSync;
 assign VGA_VS = VSync;
 assign VGA_DE = ~(HBlank | VBlank);
+
+always @(posedge VGA_CLK) begin
+	reg old_ce;
+	old_ce <= ce_pix;
+	VGA_CE <= ~old_ce & ce_pix;
+end
 
 generate
 	if(DW == 6) begin
