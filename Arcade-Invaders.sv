@@ -154,12 +154,20 @@ wire        ioctl_download;
 wire        ioctl_wr;
 wire [24:0] ioctl_addr;
 wire  [7:0] ioctl_dout;
+wire  [7:0] ioctl_index;
+
+reg	[7:0] machine_info;
+
+
 
 wire [10:0] ps2_key;
 
 wire [15:0] joy_0, joy_1;
 wire [15:0] joya;
 wire        forced_scandoubler;
+
+
+
 
 hps_io #(.STRLEN($size(CONF_STR)>>3)) hps_io
 (
@@ -175,7 +183,7 @@ hps_io #(.STRLEN($size(CONF_STR)>>3)) hps_io
 	.ioctl_wr(ioctl_wr),
 	.ioctl_addr(ioctl_addr),
 	.ioctl_dout(ioctl_dout),
-
+	.ioctl_index(ioctl_index),
 	.joystick_0(joy_0),
 	.joystick_1(joy_1),
 	.joystick_analog_0(joya),
@@ -191,8 +199,6 @@ always @(posedge clk_sys) begin
 	if(old_state != ps2_key[10]) begin
 		casex(code)
 			'h029: btn_fire         <= pressed; // space
-			'h005: btn_one_player   <= pressed; // F1
-			'h006: btn_two_players  <= pressed; // F2
 			'hX6B: btn_left      	<= pressed; // left arrow
 			'hX74: btn_right      	<= pressed; // right arrow
 			'h004: btn_coin  			<= pressed; // F3
@@ -310,6 +316,132 @@ assign AUDIO_S = 0;
 wire reset;
 assign reset = (RESET | status[0] | buttons[1] | ioctl_download);
 
+wire [7:0] GDB0;
+wire [7:0] GDB1;
+wire [7:0] GDB2;
+wire [8:1] DIP;
+
+wire Fire=btn_fire | joy[4];
+wire MoveLeft=btn_left | joy[1];
+wire MoveRight=btn_right | joy[0];
+wire Coin=btn_coin | joy[5] | joy[6] | btn_one_player | btn_two_players;
+wire Sel2Player=btn_two_players|btn_start_2 | joy[6];
+wire Sel1Player=btn_one_player|btn_start_1 | joy[5];
+
+always_ff @(posedge clk_sys) begin
+	if (ioctl_download & ioctl_index==1'b01)
+		 machine_info=ioctl_dout;
+
+	case(machine_info)
+		8'b00000000: begin
+		// space invaders
+ GDB0[0]<=DIP[8];
+ GDB0[1]<=DIP[7];
+ GDB0[2]<=DIP[6];
+ GDB0[3]<=1'b0;
+ GDB0[4]<=Fire;
+ GDB0[5]<=MoveLeft;
+ GDB0[6]<=MoveRight;
+ GDB0[7]<=DIP[5];
+
+ GDB1[0]<=Coin;
+ GDB1[1]<=Sel2Player;
+ GDB1[2]<=Sel1Player;
+ GDB1[3]<=1'b1;
+ GDB1[4]<=Fire;
+ GDB1[5]<=MoveLeft;
+ GDB1[6]<=MoveRight;
+ GDB1[7]<=0;
+
+ GDB2[0]<=DIP[4];
+ GDB2[1]<=DIP[3];
+ GDB2[2]<=0;
+ GDB2[3]<=DIP[2];
+ GDB2[4]<=Fire;
+ GDB2[5]<=MoveLeft;
+ GDB2[6]<=MoveRight;
+ GDB2[7]<=DIP[1];
+
+ DIP[8:5]<=4'b1111;
+ DIP[1]<=info;
+ DIP[2]<=bonus;
+ DIP[3]<=bases[1];
+ DIP[4]<=bases[0];
+		end 
+		8'b00000001: begin
+//		Shuffleboard
+
+ GDB0[0]<=DIP[8];
+ GDB0[1]<=DIP[7];
+ GDB0[2]<=DIP[6];
+ GDB0[3]<=1'b1;
+ GDB0[4]<=~Fire;
+ GDB0[5]<=~MoveLeft;
+ GDB0[6]<=~MoveRight;
+ GDB0[7]<=DIP[5];
+
+ GDB1[0]<=~Coin;
+ GDB1[1]<=~Sel2Player;
+ GDB1[2]<=~Sel1Player;
+ GDB1[3]<=1'b1;
+ GDB1[4]<=~Fire;
+ GDB1[5]<=~MoveLeft;
+ GDB1[6]<=~MoveRight;
+ GDB1[7]<=1;
+
+ GDB2[0]<=DIP[4];//-- LSB Lives 3-6
+ GDB2[1]<=DIP[3];//-- MSB Lives 3-6
+ GDB2[2]<=0;
+ GDB2[3]<=0;//DIP[2];//-- Bonus life at 1000 or 1500
+ GDB2[4]<=~Fire;
+ GDB2[5]<=~MoveLeft;
+ GDB2[6]<=~MoveRight;
+ GDB2[7]<=1;//DIP[1]; //-- Coin info
+
+ DIP[8:5]<=4'b1111;
+ DIP[1]<=1'b1;
+ DIP[2]<=1'b1;
+ DIP[3]<=1'b1;
+ DIP[4]<=1'b1;
+		end 
+		8'd2: begin
+ GDB0[0]<=1'b1;
+ GDB0[1]<=1'b1;
+ GDB0[2]<=1'b1;
+ GDB0[3]<=1'b1;
+ GDB0[4]<=1'b1;
+ GDB0[5]<=1'b1;
+ GDB0[6]<=1'b1;
+ GDB0[7]<=1'b1;
+
+ GDB1[0]<=Coin;
+ GDB1[1]<=~Sel2Player;
+ GDB1[2]<=~Sel1Player;
+ GDB1[3]<=1'b1;
+ GDB1[4]<=~Fire;
+ GDB1[5]<=~MoveLeft;
+ GDB1[6]<=~MoveRight;
+ GDB1[7]<=1;
+
+ GDB2[0]<=0;//-- LSB Lives 3-6
+ GDB2[1]<=0;//-- MSB Lives 3-6
+ GDB2[2]<=0;
+ GDB2[3]<=0;//DIP[2];//-- Bonus life at 1000 or 1500
+ GDB2[4]<=~Fire;
+ GDB2[5]<=~MoveLeft;
+ GDB2[6]<=~MoveRight;
+ GDB2[7]<=0;
+
+ DIP[8:5]<=4'b1111;
+ DIP[1]<=1'b1;
+ DIP[2]<=1'b1;
+ DIP[3]<=1'b1;
+ DIP[4]<=1'b1;
+end
+		
+	endcase
+end
+
 invaders_top invaders_top
 (
 
@@ -319,9 +451,14 @@ invaders_top invaders_top
 
 	.I_RESET(reset),
 
+	.GDB0(GDB0),
+	.GDB1(GDB1),
+	.GDB2(GDB2),
+	
+
 	.dn_addr(ioctl_addr[15:0]),
 	.dn_data(ioctl_dout),
-	.dn_wr(ioctl_wr),
+	.dn_wr(ioctl_wr&(ioctl_index==0)),
 
 	.r(r),
 	.g(g),
@@ -337,18 +474,20 @@ invaders_top invaders_top
 	.sh_col(sh_col),
 	.sc1_col(sc1_col),
 	.sc2_col(sc2_col),
-	.mn_col(mn_col),
-	.info(info),
-	.bonus(bonus),
-	.newbonus(newbonus),
-	.bases(bases),
-	.btn_coin(btn_coin | joy[5] | joy[6] | btn_one_player | btn_two_players),
-	.btn_one_player(btn_one_player|btn_start_1 | joy[5]),
-	.btn_two_player(btn_two_players|btn_start_2 | joy[6]),
+	.mn_col(mn_col)
+	
+//	.info(info),
+//	.bonus(bonus),
+//	.newbonus(newbonus),
+//	.bases(bases),
 
-	.btn_fire(btn_fire | joy[4]),
-	.btn_right(btn_right | joy[0]),
-	.btn_left(btn_left | joy[1])
+	//.btn_coin(btn_coin | joy[5] | joy[6] | btn_one_player | btn_two_players),
+	//.btn_one_player(btn_one_player|btn_start_1 | joy[5]),
+	//.btn_two_player(btn_two_players|btn_start_2 | joy[6]),
+
+	//.btn_fire(btn_fire | joy[4]),
+	//.btn_right(btn_right | joy[0]),
+	//.btn_left(btn_left | joy[1])
 
 );
 

@@ -61,6 +61,11 @@ entity invaders_top is
 		Clk_mem				: in std_logic;
 		clk_vid				: in std_logic;
 		I_RESET				: in std_logic;
+
+		GDB0         : in std_logic_vector(7 downto 0);
+		GDB1         : in std_logic_vector(7 downto 0);
+		GDB2         : in std_logic_vector(7 downto 0);
+
 		
 		dn_addr          	: in std_logic_vector(15 downto 0);
 		dn_data         	: in std_logic_vector(7 downto 0);
@@ -80,18 +85,20 @@ entity invaders_top is
 		sh_col				: in std_logic_vector(2 downto 0);
 		sc1_col				: in std_logic_vector(2 downto 0);
 		sc2_col				: in std_logic_vector(2 downto 0);
-		mn_col				: in std_logic_vector(2 downto 0);
-		info					: in std_logic;
-		bonus					: in std_logic;
-		newbonus				: in std_logic;
-		bases					: in std_logic_vector(1 downto 0);
+		mn_col				: in std_logic_vector(2 downto 0)
 		
-		btn_coin				: in std_logic;
-		btn_one_player		: in std_logic;
-		btn_two_player		: in std_logic;
-		btn_fire				: in std_logic;
-		btn_right			: in std_logic;
-		btn_left				: in std_logic
+
+		--info					: in std_logic;
+		--bonus					: in std_logic;
+		--newbonus				: in std_logic;
+		--bases					: in std_logic_vector(1 downto 0);
+		
+		--btn_coin				: in std_logic;
+		--btn_one_player		: in std_logic;
+		--btn_two_player		: in std_logic;
+		--btn_fire				: in std_logic;
+		--btn_right			: in std_logic;
+		--btn_left				: in std_logic
 
 		--
 
@@ -300,24 +307,30 @@ begin
 
   --
 
-	DIP(8 downto 5) <= "1111";
-	DIP(1) <= info;
-	DIP(2) <= bonus;
-	DIP(3) <= bases(1);
-	DIP(4) <= bases(0);
+	--DIP(8 downto 5) <= "1111";
+	--DIP(1) <= info;
+	--DIP(2) <= bonus;
+	--DIP(3) <= bases(1);
+	--DIP(4) <= bases(0);
 	
 
 	core : entity work.invaders
 		port map(
 			Rst_n      => I_RESET_L,
 			Clk        => Clk,
-			MoveLeft   => btn_left,
-			MoveRight  => btn_right,
-			Coin       => btn_coin,
-			Sel1Player => btn_one_player,
-			Sel2Player => btn_two_player,
-			Fire       => btn_fire,
-			DIP        => DIP,
+			
+			GDB0    => GDB0,
+			GDB1    => GDB1,
+			GDB2    => GDB2,
+
+			--MoveLeft   => btn_left,
+			--MoveRight  => btn_right,
+			--Coin       => btn_coin,
+			--Sel1Player => btn_one_player,
+			--Sel2Player => btn_two_player,
+			--Fire       => btn_fire,
+			--DIP        => DIP,
+			
 			ram_do     => ram_do,
 			rom_do     => rom_do,
 			ram_di     => ram_di,
@@ -335,18 +348,18 @@ begin
 	-- ROM
 	--
 	
-rom_cs  <= '1' when dn_addr(15 downto 8) < X"20"     else '0';
+rom_cs  <= '1' when dn_wr='1'; --dn_addr(15 downto 8) < X"20"     else '0';
 
-cpu_prog_rom : work.dpram generic map (13,8)
+cpu_prog_rom : work.dpram generic map (14,8)
 port map
 (
 	clock_a   => Clk_mem,
 	wren_a    => dn_wr and rom_cs,
-	address_a => dn_addr(12 downto 0),
+	address_a => dn_addr(13 downto 0),
 	data_a    => dn_data,
 
 	clock_b   => Clk,
-	address_b => cpu_addr(12 downto 0),
+	address_b => cpu_addr(13 downto 0),
 	q_b       => rom_do
 );	
 	

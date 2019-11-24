@@ -1,0 +1,12 @@
+<misterromdescription>
+        <rbf>Invaders</rbf>
+	<rom index="1" >
+		<part> 00 </part>
+	</rom>
+	<rom index="0" zip="invaders.zip" md5="fb811510805726d9cb498df74cb20472">
+		<part name="invaders.h"/> 
+		<part name="invaders.g"/>
+		<part name="invaders.f"/>
+		<part name="invaders.e"/>
+	</rom>
+</misterromdescription>

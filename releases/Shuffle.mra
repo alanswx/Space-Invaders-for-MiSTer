@@ -1,0 +1,12 @@
+<misterromdescription>
+        <rbf>Invaders</rbf>
+        <rom index="1" >
+                <part  > 01 </part>
+        </rom>
+	<rom index="0" zip="shuffle.zip" md5="">
+		<part name="shuffle.h"/> 
+		<part name="shuffle.g"/>
+		<part name="shuffle.f"/>
+		<part name="shuffle.e"/>
+	</rom>
+</misterromdescription>

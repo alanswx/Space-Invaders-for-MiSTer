@@ -58,13 +58,18 @@ entity invaders is
 	port(
 		Rst_n           : in  std_logic;
 		Clk             : in  std_logic;
-		MoveLeft        : in  std_logic;
-		MoveRight       : in  std_logic;
-		Coin            : in  std_logic;
-		Sel1Player      : in  std_logic;
-		Sel2Player      : in  std_logic;
-		Fire            : in  std_logic;
-		DIP             : in  std_logic_vector(8 downto 1);
+--		MoveLeft        : in  std_logic;
+--		MoveRight       : in  std_logic;
+--		Coin            : in  std_logic;
+--		Sel1Player      : in  std_logic;
+--		Sel2Player      : in  std_logic;
+--		Fire            : in  std_logic;
+--		DIP             : in  std_logic_vector(8 downto 1);
+
+		GDB0         : in std_logic_vector(7 downto 0);
+		GDB1         : in std_logic_vector(7 downto 0);
+		GDB2         : in std_logic_vector(7 downto 0);
+
 		ram_do             : in  std_logic_vector(7 downto 0);
 		rom_do              : in  std_logic_vector(7 downto 0);
 		ram_di             : out std_logic_vector(7 downto 0);
@@ -110,9 +115,9 @@ architecture rtl of invaders is
 		VSync           : out std_logic);
 	end component;
 
-	signal GDB0         : std_logic_vector(7 downto 0);
-	signal GDB1         : std_logic_vector(7 downto 0);
-	signal GDB2         : std_logic_vector(7 downto 0);
+--	signal GDB0         : std_logic_vector(7 downto 0);
+--	signal GDB1         : std_logic_vector(7 downto 0);
+--	signal GDB2         : std_logic_vector(7 downto 0);
 	signal S            : std_logic_vector(7 downto 0);
 	signal GDB          : std_logic_vector(7 downto 0);
 	signal cpu_do           : std_logic_vector(7 downto 0);
@@ -165,7 +170,7 @@ begin
 
 	u_mw8080: mw8080
 		port map(
-			Rst_n => Rst_n_s_i,
+			Rst_n =>  Rst_n,-- AJS -- Rst_n_s_i,
 			Clk => Clk,
 			RWE_n => RWE_n,
 			ram_do => ram_do,
@@ -196,32 +201,32 @@ begin
 				GDB2 when "10",
 				S when others;
 
-	GDB0(0) <= DIP(8);  -- Unused ?
-	GDB0(1) <= DIP(7);  -- Unused ?
-	GDB0(2) <= DIP(6);  -- Unused ?
-	GDB0(3) <= '0';     -- Unused unconnected on schem?
-	GDB0(4) <= Fire;
-	GDB0(5) <= MoveLeft;
-	GDB0(6) <= MoveRight;
-	GDB0(7) <= DIP(5);  -- Unused ?
+--	GDB0(0) <= DIP(8);  -- Unused ?
+--	GDB0(1) <= DIP(7);  -- Unused ?
+--	GDB0(2) <= DIP(6);  -- Unused ?
+--	GDB0(3) <= '0';     -- Unused unconnected on schem?
+--	GDB0(4) <= Fire;
+--	GDB0(5) <= MoveLeft;
+--	GDB0(6) <= MoveRight;
+--	GDB0(7) <= DIP(5);  -- Unused ?
 
-	GDB1(0) <= Coin;
-	GDB1(1) <= Sel2Player;
-	GDB1(2) <= Sel1Player;
-	GDB1(3) <= '1';             -- Unused set high on schem?
-	GDB1(4) <= Fire;
-	GDB1(5) <= MoveLeft;
-	GDB1(6) <= MoveRight;
-	GDB1(7) <= '0';             -- Unused unconnected on schem?
+--	GDB1(0) <= Coin;
+--	GDB1(1) <= Sel2Player;
+--	GDB1(2) <= Sel1Player;
+--	GDB1(3) <= '1';             -- Unused set high on schem?
+--	GDB1(4) <= Fire;
+--	GDB1(5) <= MoveLeft;
+--	GDB1(6) <= MoveRight;
+--	GDB1(7) <= '0';             -- Unused unconnected on schem?
 
-	GDB2(0) <= DIP(4);  -- LSB Lives 3-6 default on '0'
-	GDB2(1) <= DIP(3);  -- MSB Lives 3-6 default on '0'
-	GDB2(2) <= '0';             -- Tilt 
-	GDB2(3) <= DIP(2);  -- Bonus life at 1000 or 1500 can only be set before switch on default on '0'
-	GDB2(4) <= Fire;
-	GDB2(5) <= MoveLeft;
-	GDB2(6) <= MoveRight;
-	GDB2(7) <= DIP(1);  -- Coin info default on '0'
+--	GDB2(0) <= DIP(4);  -- LSB Lives 3-6 default on '0'
+--	GDB2(1) <= DIP(3);  -- MSB Lives 3-6 default on '0'
+--	GDB2(2) <= '0';             -- Tilt 
+--	GDB2(3) <= DIP(2);  -- Bonus life at 1000 or 1500 can only be set before switch on default on '0'
+--	GDB2(4) <= Fire;
+--	GDB2(5) <= MoveLeft;
+--	GDB2(6) <= MoveRight;
+--	GDB2(7) <= DIP(1);  -- Coin info default on '0'
 
 	PortWr(2) <= '1' when cpu_addr_i(10 downto 8) = "010" and Sample = '1' else '0';
 	PortWr(3) <= '1' when cpu_addr_i(10 downto 8) = "011" and Sample = '1' else '0';
