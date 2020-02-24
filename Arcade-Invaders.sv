@@ -405,9 +405,9 @@ always @(*) begin
 		  begin
 			 landscape<=0;
           ccw<=1;
-          GDB0 <= sw[0] | { 1'b0, m_right,m_left,m_fire_a,1'b0,1'b0, 1'b0,1'b0};
-          GDB1 <= sw[1] | { 1'b0, m_right,m_left,m_fire_a,1'b0,m_start1, m_start2, m_coin1 };
-          GDB2 <= sw[2] | { 1'b0, m_right,m_left,m_fire_a,1'b1,1'b1, 1'b0, 1'b0 };
+          GDB0 <= sw[0] | { 1'b0, m_right,m_left,m_fire_a,1'b1,1'b0, 1'b0,1'b0};
+          GDB1 <= sw[1] | { 1'b1, m_right,m_left,m_fire_a,1'b1,m_start1, m_start2, m_coin1 };
+          GDB2 <= sw[2] | { 1'b1, m_right,m_left,m_fire_a,1'b0,1'b0, 1'b0, 1'b0 };
         end
         mod_shuffleboard:
 		  begin
