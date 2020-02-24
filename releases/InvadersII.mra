@@ -1,0 +1,15 @@
+<misterromdescription>
+        <rbf>Invaders</rbf>
+	<rom index="1" >
+		<part> 00 </part>
+	</rom>
+	<buttons names="Fire,-,-,-,Start 1P,Start 2P,Coin" default="A,Start,Select,R"/>
+	<rom index="0" zip="invad2ct.zip" md5="none">
+		<part name="invad2ct.h"/> 
+		<part name="invad2ct.g"/> 
+		<part name="invad2ct.g"/> 
+		<part name="invad2ct.e"/> 
+		<part name="invad2ct.b"/> 
+		<part name="invad2ct.a"/> 
+	</rom>
+</misterromdescription>

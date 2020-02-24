@@ -1,0 +1,13 @@
+<misterromdescription>
+        <rbf>Invaders</rbf>
+	<rom index="1" >
+		<part> 05 </part>
+	</rom>
+	<buttons names="Fire,-,-,-,Start 1P,Start 2P,Coin" default="A,Start,Select,R"/>
+	<rom index="0" zip="boothill.zip" md5="none">
+		<part name="romh.cpu"/> 
+		<part name="romg.cpu"/>
+		<part name="romf.cpu"/>
+		<part name="rome.cpu"/>
+	</rom>
+</misterromdescription>

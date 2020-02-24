@@ -3,7 +3,7 @@
         <rom index="1" >
                 <part> 02 </part>
         </rom>
-	<rom index="0" zip="vortex.zip" md5="">
+	<rom index="0" zip="vortex.zip" md5="none">
 		<part name="1.t36"/> 
 		<part name="2.t35"/>
 		<part name="3.t34"/>

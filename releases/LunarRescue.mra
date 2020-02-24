@@ -1,0 +1,15 @@
+<misterromdescription>
+        <rbf>Invaders</rbf>
+	<rom index="1" >
+		<part> 06 </part>
+	</rom>
+	<buttons names="Fire,-,-,-,Start 1P,Start 2P,Coin" default="A,Start,Select,R"/>
+	<rom index="0" zip="lrescue.zip" md5="none">
+		<part name="lrescue.1"/> 
+		<part name="lrescue.2"/> 
+		<part name="lrescue.3"/> 
+		<part name="lrescue.4"/> 
+		<part name="lrescue.5"/> 
+		<part name="lrescue.6"/> 
+	</rom>
+</misterromdescription>

@@ -28,7 +28,7 @@ module emu
 	input         RESET,
 
 	//Must be passed to hps_io module
-	inout  [44:0] HPS_BUS,
+	inout  [45:0] HPS_BUS,
 
 	//Base video clock. Usually equals to CLK_SYS.
 	output        VGA_CLK,
@@ -93,34 +93,31 @@ assign LED_USER  = ioctl_download;
 assign LED_DISK  = 0;
 assign LED_POWER = 0;
 
-assign HDMI_ARX = status[1] ? 8'd16 : status[2] ? 8'd4 : 8'd3;
-assign HDMI_ARY = status[1] ? 8'd9  : status[2] ? 8'd3 : 8'd4;
+assign HDMI_ARX = status[1] ? 8'd16 : (status[2] | landscape) ? 8'd4 : 8'd3;
+assign HDMI_ARY = status[1] ? 8'd9  : (status[2] | landscape) ? 8'd3 : 8'd4;
 
 
 
 `include "build_id.v" 
 localparam CONF_STR = {
 	"A.INVADERS;;",
-	"F,rom;", // allow loading of alternate ROMs
 	"-;",
-	"O1,Aspect Ratio,Original,Wide;", 
-	"O2,Orientation,Vert,Horz;",
+	"H0O1,Aspect Ratio,Original,Wide;", 
+	"H1H0O2,Orientation,Vert,Horz;",
 	"O35,Scandoubler Fx,None,HQ2x,CRT 25%,CRT 50%,CRT 75%;",  
 	"-;",
-	"O6,Display Coin Info,ON,OFF;",
-//	"O6,Bonus Base,1500pts,1000pts;", // This can only be set before game start - change freezes play and no reset - could add code to reset on change??
-	"O78,Bases,3,4,5,6;",
+	"DIP;",
 	"-;",
 	"O9A,Colours,Original,colour1,colour2,colour3;",
 	"-;",
 	"R0,Reset;",
-	"J1,Fire,Start 1P,Start 2P;",
+	"J1,Fire 1,Fire 2,Fire 3,Fire 4,Start 1P,Start 2P,Coin;",
 	"V,v",`BUILD_DATE
 };
 
 ////////////////////   CLOCKS   ///////////////////
 
-wire clk_sys, clk_6, clk_12, clk_10;
+wire clk_48, clk_sys, clk_6, clk_12, clk_10;
 
 
 
@@ -128,10 +125,11 @@ pll pll
 (
 	.refclk(CLK_50M),
 	.rst(0),
-	.outclk_0(clk_sys),
-	.outclk_1(clk_12),
-	.outclk_2(clk_10),
-	.outclk_3(clk_6)
+	.outclk_0(clk_48),
+	.outclk_1(clk_sys),// 24MHz
+	.outclk_2(clk_12),
+	.outclk_3(clk_10),
+	.outclk_4(clk_6)
 );
 
 reg ce_12, ce_6, ce_3, ce_1p5;
@@ -149,6 +147,8 @@ end
 
 wire [31:0] status;
 wire  [1:0] buttons;
+wire        forced_scandoubler;
+wire        direct_video;
 
 wire        ioctl_download;
 wire        ioctl_wr;
@@ -162,10 +162,10 @@ reg	[7:0] machine_info;
 
 wire [10:0] ps2_key;
 
-wire [15:0] joy_0, joy_1;
+wire [15:0] joy1, joy2;
 wire [15:0] joya;
-wire        forced_scandoubler;
 
+wire [21:0] gamma_bus;
 
 
 
@@ -176,16 +176,21 @@ hps_io #(.STRLEN($size(CONF_STR)>>3)) hps_io
 
 	.conf_str(CONF_STR),
 
-	.buttons(buttons),
-	.status(status),
-	.forced_scandoubler(forced_scandoubler),
+   .buttons(buttons),
+   .status(status),
+   .status_menumask({landscape,direct_video}),
+   .forced_scandoubler(forced_scandoubler),
+   .gamma_bus(gamma_bus),
+   .direct_video(direct_video),
+
 	.ioctl_download(ioctl_download),
 	.ioctl_wr(ioctl_wr),
 	.ioctl_addr(ioctl_addr),
 	.ioctl_dout(ioctl_dout),
 	.ioctl_index(ioctl_index),
-	.joystick_0(joy_0),
-	.joystick_1(joy_1),
+	
+	.joystick_0(joy1),
+	.joystick_1(joy2),
 	.joystick_analog_0(joya),
 	.ps2_key(ps2_key)
 );
@@ -198,21 +203,31 @@ always @(posedge clk_sys) begin
 	
 	if(old_state != ps2_key[10]) begin
 		casex(code)
-			'h029: btn_fire         <= pressed; // space
-			'hX6B: btn_left      	<= pressed; // left arrow
-			'hX74: btn_right      	<= pressed; // right arrow
-			'h004: btn_coin  			<= pressed; // F3
+			'h75: btn_up            <= pressed; // up
+			'h72: btn_down          <= pressed; // down
+			'h6B: btn_left          <= pressed; // left
+			'h74: btn_right         <= pressed; // right
+			'h76: btn_coin1         <= pressed; // ESC
+			'h05: btn_start1        <= pressed; // F1
+			'h06: btn_start2        <= pressed; // F2
+			'h14: btn_fireA         <= pressed; // lctrl
+			'h11: btn_fireB         <= pressed; // lalt
+			'h29: btn_fireC         <= pressed; // Space
+			'h12: btn_fireD         <= pressed; // l-shift
+
 			// JPAC/IPAC/MAME Style Codes
-			'h005: btn_one_player  <= pressed; // F1
-			'h006: btn_two_players <= pressed; // F2
-			'h016: btn_start_1     <= pressed; // 1
-			'h01E: btn_start_2     <= pressed; // 2
-			'h02E: btn_coin      <= pressed; // 5
-			'h036: btn_coin      <= pressed; // 6
-			//'h023: btn_left_2      <= pressed; // D
-			//'h034: btn_right_2     <= pressed; // G
-			//'h01C: btn_fire_2      <= pressed; // A
-			//'h02C: btn_test        <= pressed; // T
+			'h16: btn_start1        <= pressed; // 1
+			'h1E: btn_start2        <= pressed; // 2
+			'h2E: btn_coin1         <= pressed; // 5
+			'h36: btn_coin2         <= pressed; // 6
+			'h2D: btn_up2           <= pressed; // R
+			'h2B: btn_down2         <= pressed; // F
+			'h23: btn_left2         <= pressed; // D
+			'h34: btn_right2        <= pressed; // G
+			'h1C: btn_fire2A        <= pressed; // A
+			'h1B: btn_fire2B        <= pressed; // S
+			'h21: btn_fire2C        <= pressed; // Q
+			'h1D: btn_fire2D        <= pressed; // W
 		endcase
 	end
 end
@@ -255,16 +270,57 @@ always @(posedge clk_sys) begin
 end
 
 
-reg btn_start_1=0;
-reg btn_start_2=0;
+reg btn_left   = 0;
+reg btn_right  = 0;
+reg btn_down   = 0;
+reg btn_up     = 0;
+reg btn_fireA  = 0;
+reg btn_fireB  = 0;
+reg btn_fireC  = 0;
+reg btn_fireD  = 0;
+reg btn_coin1  = 0;
+reg btn_coin2  = 0;
+reg btn_start1 = 0;
+reg btn_start2 = 0;
+reg btn_up2    = 0;
+reg btn_down2  = 0;
+reg btn_left2  = 0;
+reg btn_right2 = 0;
+reg btn_fire2A = 0;
+reg btn_fire2B = 0;
+reg btn_fire2C = 0;
+reg btn_fire2D = 0;
 
+wire m_start1  = btn_start1 | joy[8];
+wire m_start2  = btn_start2 | joy[9];
+wire m_coin1   = btn_coin1  | btn_coin2 | joy[10];
 
-reg btn_right = 0;
-reg btn_left = 0;
-reg btn_one_player = 0;
-reg btn_two_players = 0;
-reg btn_fire = 0;
-reg btn_coin = 0;
+wire m_right1  = btn_right  | joy1[0];
+wire m_left1   = btn_left   | joy1[1];
+wire m_down1   = btn_down   | joy1[2];
+wire m_up1     = btn_up     | joy1[3];
+wire m_fire1a  = btn_fireA  | joy1[4];
+wire m_fire1b  = btn_fireB  | joy1[5];
+wire m_fire1c  = btn_fireC  | joy1[6];
+wire m_fire1d  = btn_fireD  | joy1[7];
+
+wire m_right2  = btn_right2 | joy2[0];
+wire m_left2   = btn_left2  | joy2[1];
+wire m_down2   = btn_down2  | joy2[2];
+wire m_up2     = btn_up2    | joy2[3];
+wire m_fire2a  = btn_fire2A | joy2[4];
+wire m_fire2b  = btn_fire2B | joy2[5];
+wire m_fire2c  = btn_fire2C | joy2[6];
+wire m_fire2d  = btn_fire2D | joy2[7];
+
+wire m_right   = m_right1 | m_right2;
+wire m_left    = m_left1  | m_left2; 
+wire m_down    = m_down1  | m_down2; 
+wire m_up      = m_up1    | m_up2;   
+wire m_fire_a  = m_fire1a | m_fire2a;
+wire m_fire_b  = m_fire1b | m_fire2b;
+wire m_fire_c  = m_fire1c | m_fire2c;
+wire m_fire_d  = m_fire1d | m_fire2d;
 
 wire [2:0] ms_col;
 wire [2:0] bs_col;
@@ -273,7 +329,7 @@ wire [2:0] sc1_col;
 wire [2:0] sc2_col;
 wire [2:0] mn_col;
 
-wire [15:0] joy = joy_0 | joy_1;
+wire [15:0] joy = joy1 | joy2;
 
 
 ///////////////////////////////////////////////////////////////////
@@ -282,12 +338,13 @@ wire [15:0] joy = joy_0 | joy_1;
 wire hblank, vblank;
 wire hs, vs;
 wire [3:0] r,g,b;
+wire no_rotate = status[2] | direct_video | landscape;
 
-arcade_rotate_fx #(260,224,12,1) arcade_video
+arcade_video #(260,224,12) arcade_video
 (
 	.*,
 
-	.clk_video(clk_sys),
+	.clk_video(clk_48),
 	.ce_pix(ce_6),
 
 	.RGB_in({r,g,b}),
@@ -295,20 +352,13 @@ arcade_rotate_fx #(260,224,12,1) arcade_video
 	.VBlank(vblank),
 	.HSync(hs),
 	.VSync(vs),
-	
-	.fx(status[5:3]),
-	.forced_scandoubler(1'b0),
-	.no_rotate(status[2])
+
+	.rotate_ccw(ccw),
+   .fx(status[5:3])
+
 );
 
 
-reg info = 0;
-reg bonus = 0;
-reg newbonus = 0;
-reg [1:0] bases = 2'b0;
-assign info = status[6];
-assign newbonus = 0;
-assign bases = status[8:7];
 wire [7:0] audio;
 assign AUDIO_L = {audio, audio};
 assign AUDIO_R = AUDIO_L;
@@ -319,127 +369,112 @@ assign reset = (RESET | status[0] | buttons[1] | ioctl_download);
 wire [7:0] GDB0;
 wire [7:0] GDB1;
 wire [7:0] GDB2;
-wire [8:1] DIP;
 
-wire Fire=btn_fire | joy[4];
-wire MoveLeft=btn_left | joy[1];
-wire MoveRight=btn_right | joy[0];
-wire Coin=btn_coin | joy[5] | joy[6] | btn_one_player | btn_two_players;
-wire Sel2Player=btn_two_players|btn_start_2 | joy[6];
-wire Sel1Player=btn_one_player|btn_start_1 | joy[5];
 
-always_ff @(posedge clk_sys) begin
-	if (ioctl_download & ioctl_index==1'b01)
-		 machine_info=ioctl_dout;
+localparam mod_spaceinvaders = 0;
+localparam mod_shuffleboard  = 1;
+localparam mod_vortex        = 2;
+localparam mod_280zap        = 3;
+localparam mod_blueshark     = 4;
+localparam mod_boothill      = 5;
+localparam mod_lunarrescue   = 6;
+localparam mod_ozmawars      = 7;
+localparam mod_spacelaser    = 8;
+localparam mod_spacewalk     = 9;
+reg [7:0] mod = 0;
+always @(posedge clk_sys) if (ioctl_wr & (ioctl_index==1)) mod <= ioctl_dout;
 
-	case(machine_info)
-		8'b00000000: begin
-		// space invaders
- GDB0[0]<=DIP[8];
- GDB0[1]<=DIP[7];
- GDB0[2]<=DIP[6];
- GDB0[3]<=1'b0;
- GDB0[4]<=Fire;
- GDB0[5]<=MoveLeft;
- GDB0[6]<=MoveRight;
- GDB0[7]<=DIP[5];
 
- GDB1[0]<=Coin;
- GDB1[1]<=Sel2Player;
- GDB1[2]<=Sel1Player;
- GDB1[3]<=1'b1;
- GDB1[4]<=Fire;
- GDB1[5]<=MoveLeft;
- GDB1[6]<=MoveRight;
- GDB1[7]<=0;
 
- GDB2[0]<=DIP[4];
- GDB2[1]<=DIP[3];
- GDB2[2]<=0;
- GDB2[3]<=DIP[2];
- GDB2[4]<=Fire;
- GDB2[5]<=MoveLeft;
- GDB2[6]<=MoveRight;
- GDB2[7]<=DIP[1];
 
- DIP[8:5]<=4'b1111;
- DIP[1]<=info;
- DIP[2]<=bonus;
- DIP[3]<=bases[1];
- DIP[4]<=bases[0];
-		end 
-		8'b00000001: begin
-//		Shuffleboard
+reg [7:0] sw[8];
+always @(posedge clk_sys) if (ioctl_wr && (ioctl_index==254) && !ioctl_addr[24:3]) sw[ioctl_addr[2:0]] <= ioctl_dout;
 
- GDB0[0]<=DIP[8];
- GDB0[1]<=DIP[7];
- GDB0[2]<=DIP[6];
- GDB0[3]<=1'b1;
- GDB0[4]<=~Fire;
- GDB0[5]<=~MoveLeft;
- GDB0[6]<=~MoveRight;
- GDB0[7]<=DIP[5];
+reg landscape;
+reg ccw;
+always @(*) begin
 
- GDB1[0]<=~Coin;
- GDB1[1]<=~Sel2Player;
- GDB1[2]<=~Sel1Player;
- GDB1[3]<=1'b1;
- GDB1[4]<=~Fire;
- GDB1[5]<=~MoveLeft;
- GDB1[6]<=~MoveRight;
- GDB1[7]<=1;
+        landscape <= 1;
+		  ccw<=0;
+        GDB0 <= 8'hFF;
+        GDB1 <= 8'hFF;
+        GDB2 <= 8'hFF;
 
- GDB2[0]<=DIP[4];//-- LSB Lives 3-6
- GDB2[1]<=DIP[3];//-- MSB Lives 3-6
- GDB2[2]<=0;
- GDB2[3]<=0;//DIP[2];//-- Bonus life at 1000 or 1500
- GDB2[4]<=~Fire;
- GDB2[5]<=~MoveLeft;
- GDB2[6]<=~MoveRight;
- GDB2[7]<=1;//DIP[1]; //-- Coin info
+        case (mod) 
+		  mod_spaceinvaders:
+		  begin
+			 landscape<=0;
+          ccw<=1;
+          GDB0 <= sw[0] | ~{ 1'b0, m_right,m_left,m_fire_a,1'b0,1'b0, 1'b0,1'b0};
+          GDB1 <= sw[1] | ~{ 1'b0, m_right,m_left,m_fire_a,1'b0,m_start1, m_start2, m_coin1 };
+          GDB2 <= sw[2] | ~{ 1'b0, m_right,m_left,m_fire_a,1'b1,1'b1, 1'b0, 1'b0 };
+        end
+        mod_shuffleboard:
+		  begin
+ 			 landscape<=0;
+          ccw<=0;
+          GDB0 <= sw[0] | ~{ 1'b0, m_right,m_left,m_fire_a,1'b0,1'b0, 1'b0,1'b0};
+          GDB1 <= sw[1] | ~{ 1'b0, m_right,m_left,m_fire_a,1'b0,m_start1, m_start2, m_coin1 };
+          GDB2 <= sw[2] | ~{ 1'b0, m_right,m_left,m_fire_a,1'b1,1'b1, 1'b0, 1'b0 };
+        end
+		  mod_vortex:
+		  begin
+			//GDB0 -- all FF
+			 GDB1 <= sw[1] | ~{ 1'b0, m_right1,m_left1,m_fire1a,1'b0,m_start1, m_start2, m_coin1 };
+          GDB2 <= sw[2] | ~{ 1'b1, m_right2,m_left2,m_fire2a,1'b1,1'b1, 1'b1, 1'b1 };
+	
+		  end
+		  mod_280zap:
+		  begin
+ 			 landscape<=0;
+          ccw<=1;
+		     GDB0 <= sw[0] | ~{ m_start1, m_coin1,1'b0,m_fire_a,1'b0,1'b1, 1'b1,1'b1};
+           GDB1 <= sw[1] | ~{ 1'b0, 1'b1,1'b1,1'b1,1'b1,1'b1, 1'b1, 1'b1 };
+           GDB2 <= sw[2] | ~{ 1'b1, 1'b1,1'b0,1'b0,1'b0,1'b0, 1'b1, 1'b1 };
 
- DIP[8:5]<=4'b1111;
- DIP[1]<=1'b1;
- DIP[2]<=1'b1;
- DIP[3]<=1'b1;
- DIP[4]<=1'b1;
-		end 
-		8'd2: begin
- GDB0[0]<=1'b1;
- GDB0[1]<=1'b1;
- GDB0[2]<=1'b1;
- GDB0[3]<=1'b1;
- GDB0[4]<=1'b1;
- GDB0[5]<=1'b1;
- GDB0[6]<=1'b1;
- GDB0[7]<=1'b1;
+		  end
+		  mod_blueshark:
+		  begin
+		     GDB0 <= sw[0] | ~{ 1'b0, 1'b0,1'b0,1'b0,1'b0,1'b0, 1'b0,1'b0};
+		     GDB1 <= sw[1] | ~{ 1'b1, 1'b0,1'b0,1'b0,1'b0,1'b0, 1'b0,1'b0};
+		     GDB2 <= sw[2] | ~{ 1'b0, 1'b0,1'b0,1'b0,1'b0,1'b0,m_coin1 ,m_fire_a};
+		  end
+		  mod_boothill:
+		  begin
+          GDB0 <= sw[0] | ~{ m_fire1a, 1'b1,1'b0,1'b1,m_right1,m_left1,m_down1,m_up1};
+          GDB1 <= sw[1] | ~{ m_fire2a, 1'b1,1'b0,1'b1,m_right2,m_left2,m_down2,m_up2};
+          GDB2 <= sw[2] | ~{ m_start1, m_coin1,m_start1,1'b1,1'b0,1'b0, 1'b1, 1'b0 };
+		  end
+		  mod_lunarrescue:
+		  begin
+		  	 landscape<=0;
+          ccw<=1;
+          GDB0 <= sw[0] | ~{ 1'b0, m_right,m_left,m_fire_a,1'b0,1'b1, 1'b1,1'b1};
+          GDB1 <= sw[1] | ~{ 1'b0, m_right,m_left,m_fire_a,1'b0,m_start1, m_start2, m_coin1 };
+          GDB2 <= sw[2] | ~{ 1'b0, m_right,m_left,m_fire_a,1'b1,1'b1, 1'b0, 1'b0 };
+		  end
+        mod_ozmawars:
+		  begin
+ 		  	 landscape<=0;
+          ccw<=1;
+         // GDB0 <= sw[0] | ~{ 1'b0, m_right,m_left,m_fire_a,1'b0,1'b1, 1'b1,1'b1};
+          GDB1 <= sw[1] | ~{ 1'b0, m_right,m_left,m_fire_a,1'b0,m_start1, m_start2, ~m_coin1 };
+          GDB2 <= sw[2] | ~{ m_start1, m_coin1,m_start2,1'b0,1'b0,1'b0, 1'b0, 1'b0 };
 
- GDB1[0]<=Coin;
- GDB1[1]<=~Sel2Player;
- GDB1[2]<=~Sel1Player;
- GDB1[3]<=1'b1;
- GDB1[4]<=~Fire;
- GDB1[5]<=~MoveLeft;
- GDB1[6]<=~MoveRight;
- GDB1[7]<=1;
-
- GDB2[0]<=0;//-- LSB Lives 3-6
- GDB2[1]<=0;//-- MSB Lives 3-6
- GDB2[2]<=0;
- GDB2[3]<=0;//DIP[2];//-- Bonus life at 1000 or 1500
- GDB2[4]<=~Fire;
- GDB2[5]<=~MoveLeft;
- GDB2[6]<=~MoveRight;
- GDB2[7]<=0;
-
- DIP[8:5]<=4'b1111;
- DIP[1]<=1'b1;
- DIP[2]<=1'b1;
- DIP[3]<=1'b1;
- DIP[4]<=1'b1;
-end
-		
-	endcase
+		  end
+		  mod_spacelaser:
+		  begin
+         // GDB0 <= sw[0] | ~{ 1'b0, m_right,m_left,m_fire_a,1'b0,1'b1, 1'b1,1'b1};
+          GDB1 <= sw[1] | ~{ 1'b0, m_right,m_left,m_fire_a,1'b0,m_start1, m_start2, m_coin1 };
+          GDB2 <= sw[2] | ~{ 1'b0, m_right,m_left,m_fire_a,1'b1,1'b1, 1'b1, 1'b1 };
+		  end
+		  mod_spacewalk:
+		  begin
+			GDB0 <= 8'b0;
+         GDB1 <= sw[1] | ~{ 1'b0, 1'b0,1'b0,1'b0,m_start1, m_start2, m_coin1 , 1'b0};
+			GDB2 <= 8'b0;
+		  end
+		  endcase
 end
 
 invaders_top invaders_top
@@ -476,18 +511,6 @@ invaders_top invaders_top
 	.sc2_col(sc2_col),
 	.mn_col(mn_col)
 	
-//	.info(info),
-//	.bonus(bonus),
-//	.newbonus(newbonus),
-//	.bases(bases),
-
-	//.btn_coin(btn_coin | joy[5] | joy[6] | btn_one_player | btn_two_players),
-	//.btn_one_player(btn_one_player|btn_start_1 | joy[5]),
-	//.btn_two_player(btn_two_players|btn_start_2 | joy[6]),
-
-	//.btn_fire(btn_fire | joy[4]),
-	//.btn_right(btn_right | joy[0]),
-	//.btn_left(btn_left | joy[1])
 
 );
 

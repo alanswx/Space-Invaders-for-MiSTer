@@ -1,0 +1,15 @@
+<misterromdescription>
+        <rbf>Invaders</rbf>
+	<rom index="1" >
+		<part> 09 </part>
+	</rom>
+	<buttons names="Fire,-,-,-,Start 1P,Start 2P,Coin" default="A,Start,Select,R"/>
+	<rom index="0" zip="spacwlk.zip" md5="none">
+		<part name="sw.h"/> 
+		<part name="sw.g"/> 
+		<part name="sw.f"/> 
+		<part name="sw.e"/> 
+		<part name="sw.b"/> 
+		<part name="sw.a"/> 
+	</rom>
+</misterromdescription>

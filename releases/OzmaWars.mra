@@ -1,0 +1,15 @@
+<misterromdescription>
+        <rbf>Invaders</rbf>
+	<rom index="1" >
+		<part> 07 </part>
+	</rom>
+	<buttons names="Fire,-,-,-,Start 1P,Start 2P,Coin" default="A,Start,Select,R"/>
+	<rom index="0" zip="ozmawars.zip" md5="none">
+		<part name="mw01"/> 
+		<part name="mw02"/> 
+		<part name="mw03"/> 
+		<part name="mw04"/> 
+		<part name="mw05"/> 
+		<part name="mw06"/> 
+	</rom>
+</misterromdescription>

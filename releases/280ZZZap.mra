@@ -1,0 +1,15 @@
+<misterromdescription>
+        <rbf>Invaders</rbf>
+	<rom index="1" >
+		<part> 03 </part>
+	</rom>
+	<buttons names="Fire,-,-,-,Start 1P,Start 2P,Coin" default="A,Start,Select,R"/>
+	<rom index="0" zip="280zzzap.zip" md5="none">
+		<part name="zzzaph"/> 
+		<part name="zzzapg"/>
+		<part name="zzzapf"/>
+		<part name="zzzape"/>
+		<part name="zzzapd"/>
+		<part name="zzzapc"/>
+	</rom>
+</misterromdescription>
