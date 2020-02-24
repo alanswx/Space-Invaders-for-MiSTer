@@ -1,0 +1,13 @@
+<misterromdescription>
+        <rbf>Invaders</rbf>
+	<rom index="1" >
+		<part> 03 </part>
+	</rom>
+	<buttons names="Fire,-,-,-,Start 1P,Start 2P,Coin" default="A,Start,Select,R"/>
+	<rom index="0" zip="dogpatch.zip" md5="none">
+		<part name="dogpatch.h"/> 
+		<part name="dogpatch.g"/> 
+		<part name="dogpatch.f"/> 
+		<part name="dogpatch.e"/> 
+	</rom>
+</misterromdescription>

@@ -1,0 +1,13 @@
+<misterromdescription>
+        <rbf>Invaders</rbf>
+	<rom index="1" >
+		<part> 00 </part>
+	</rom>
+	<buttons names="Fire,-,-,-,Start 1P,Start 2P,Coin" default="A,Start,Select,R"/>
+	<rom index="0" zip="seawolf.zip" md5="none">
+		<part name="sw0041.h"/> 
+		<part name="sw0042.g"/> 
+		<part name="sw0043.f"/> 
+		<part name="sw0044.e"/> 
+	</rom>
+</misterromdescription>

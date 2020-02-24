@@ -1,0 +1,13 @@
+<misterromdescription>
+        <rbf>Invaders</rbf>
+	<rom index="1" >
+		<part> 02 </part>
+	</rom>
+	<buttons names="Fire,-,-,-,Start 1P,Start 2P,Coin" default="A,Start,Select,R"/>
+	<rom index="0" zip="dplay.zip" md5="none">
+		<part name="dplay619.h"/> 
+		<part name="dplay619.g"/> 
+		<part name="dplay619.f"/> 
+		<part name="dplay619.e"/> 
+	</rom>
+</misterromdescription>

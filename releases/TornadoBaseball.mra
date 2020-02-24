@@ -1,0 +1,12 @@
+<misterromdescription>
+        <rbf>Invaders</rbf>
+	<rom index="1" >
+		<part> 01 </part>
+	</rom>
+	<buttons names="Fire,-,-,-,Start 1P,Start 2P,Coin" default="A,Start,Select,R"/>
+	<rom index="0" zip="tornbase.zip" md5="none">
+		<part name="tb.h"/> 
+		<part name="tb.g"/> 
+		<part name="tb.f"/> 
+	</rom>
+</misterromdescription>

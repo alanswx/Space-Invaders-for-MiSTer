@@ -1,0 +1,15 @@
+<misterromdescription>
+        <rbf>Invaders</rbf>
+	<rom index="1" >
+		<part> 02 </part>
+	</rom>
+	<buttons names="Fire,-,-,-,Start 1P,Start 2P,Coin" default="A,Start,Select,R"/>
+	<rom index="0" zip="clowns.zip" md5="none">
+		<part name="h2.cpu"/> 
+		<part name="g2.cpu"/> 
+		<part name="f2.cpu"/> 
+		<part name="e2.cpu"/> 
+		<part name="d2.cpu"/> 
+		<part name="c2.cpu"/> 
+	</rom>
+</misterromdescription>
