@@ -57,19 +57,20 @@ use ieee.numeric_std.all;
 
 entity invaders_top is
 	port(
-		Clk					: in std_logic;
+		Clk                             : in std_logic;
 		Clk_mem				: in std_logic;
 		clk_vid				: in std_logic;
 		I_RESET				: in std_logic;
 
-		GDB0         : in std_logic_vector(7 downto 0);
-		GDB1         : in std_logic_vector(7 downto 0);
-		GDB2         : in std_logic_vector(7 downto 0);
+		GDB0                            : in std_logic_vector(7 downto 0);
+		GDB1                            : in std_logic_vector(7 downto 0);
+		GDB2                            : in std_logic_vector(7 downto 0);
 
 		
-		dn_addr          	: in std_logic_vector(15 downto 0);
-		dn_data         	: in std_logic_vector(7 downto 0);
-		dn_wr					: in std_logic;
+		dn_addr                         : in std_logic_vector(15 downto 0);
+		dn_data                         : in std_logic_vector(7 downto 0);
+		dn_wr                           : in std_logic;
+		dn_index                        : in std_logic_vector(7 downto 0);
 		
 		r				: out std_logic_vector(3 downto 0);
 		g				: out std_logic_vector(3 downto 0);
@@ -80,6 +81,9 @@ entity invaders_top is
 		vs				: out std_logic;
 		
 		audio_out			: out std_logic_vector(7 downto 0);
+
+                color_rom_enabled               : in std_logic;
+
 		ms_col				: in std_logic_vector(2 downto 0);
 		bs_col				: in std_logic_vector(2 downto 0);
 		sh_col				: in std_logic_vector(2 downto 0);
@@ -125,6 +129,7 @@ architecture rtl of invaders_top is
 	signal ram_addr        : std_logic_vector(12 downto 0);
 	signal ram_do          : std_logic_vector(7 downto 0);
 	signal ram2_do         : std_logic_vector(7 downto 0);
+	signal pal_do          : std_logic_vector(7 downto 0);
 	signal ram_di          : std_logic_vector(7 downto 0);
 	signal rom_do          : std_logic_vector(7 downto 0);
 	signal SoundCtrl3      : std_logic_vector(5 downto 0);
@@ -146,6 +151,7 @@ architecture rtl of invaders_top is
 	signal DWVCnt          : unsigned(8 downto 0);
 	signal Shift           : std_logic_vector(7 downto 0);
 	signal vid_addr        : std_logic_vector(12 downto 0);
+	signal color_addr      : std_logic_vector(9 downto 0);
 	signal vid_do          : std_logic;
 
 	signal Overlay_G1      : boolean;
@@ -157,6 +163,7 @@ architecture rtl of invaders_top is
 	signal Overlay_G1_VCnt : boolean;
 	
 	signal rom_cs			: std_logic;
+	signal vrom_cs			: std_logic;
 	signal spare			: std_logic := '0';
   --
 
@@ -269,6 +276,7 @@ begin
 				if (vblank ='0'and hblank = '0') then
 					if (DWHCnt(2 downto 0) = "000") then 			
 						vid_addr <= std_logic_vector(DWVCnt(7 downto 0) & DWHCnt(7 downto 3));
+						color_addr <= std_logic_vector( DWVCnt(7 downto 3) & DWHCnt(7 downto 3));
 						Shift(7 downto 0) <= ram2_do(7 downto 0); 
 					else														
 						Shift(6 downto 0) <= Shift(7 downto 1);	
@@ -276,24 +284,13 @@ begin
 					end if;													
 					vid_do <= Shift(0);									
 				end if;
+			 --		RGB <= pal_do(0) & pal_do(2) & pal_do(1);
 				if (vid_do = '0') then
 					RGB <= "000";
+				elsif (color_rom_enabled='1') then
+					RGB <= pal_do(0) & pal_do(2) & pal_do(1);
 				else
-					if Overlay_MS then
-						RGB <= ms_col;
-					elsif Overlay_G2 then
-						RGB <= bs_col;
-					elsif Overlay_G1 and Overlay_G1_VCnt then
-						RGB <= bs_col;
-					elsif Overlay_G3 then
-						RGB <= sh_col;
-					elsif Overlay_G4 then
-						RGB <= sc2_col;
-					elsif Overlay_G5 then
-						RGB <= sc1_col;
-					else
-						RGB <= mn_col;
-					end if;
+					RGB <= "111";
 				end if;			
 		end if;
   end process;
@@ -348,7 +345,8 @@ begin
 	-- ROM
 	--
 	
-rom_cs  <= '1' when dn_wr='1'; --dn_addr(15 downto 8) < X"20"     else '0';
+rom_cs  <= '1' when (dn_wr='1') and (dn_index=X"00"); --dn_addr(15 downto 8) < X"20"     else '0';
+vrom_cs  <= '1' when (dn_wr='1') and (dn_index=X"02"); --dn_addr(15 downto 8) < X"20"     else '0';
 
 cpu_prog_rom : work.dpram generic map (14,8)
 port map
@@ -362,6 +360,18 @@ port map
 	address_b => cpu_addr(13 downto 0),
 	q_b       => rom_do
 );	
+vid_pal_rom : work.dpram generic map (11,8)
+port map
+(
+	clock_a   => Clk_mem,
+	wren_a    => dn_wr and vrom_cs,
+	address_a => dn_addr(10 downto 0),
+	data_a    => dn_data,
+
+	clock_b   => clk_vid,
+	address_b => '0' & color_addr, -- 0 is for cocktail
+	q_b       => pal_do 
+);	
 	
 	--
 	-- SRAM
@@ -374,7 +384,7 @@ port map
 	wren_a    => ram_we,
 	address_a => ram_addr,
 	data_a    => ram_di,
-	q_a		 => ram_do,
+	q_a       => ram_do,
 
 	clock_b   => clk_vid,
 	address_b => vid_addr(12 downto 0),

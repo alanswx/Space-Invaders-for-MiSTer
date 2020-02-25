@@ -1,0 +1,17 @@
+<misterromdescription>
+        <rbf>Invaders</rbf>
+	<rom index="1" >
+		<part> 0A </part>
+	</rom>
+	<buttons names="Fire,-,-,-,Start 1P,Start 2P,Coin" default="A,Start,Select,R"/>
+	<rom index="0" zip="sicv.zip" md5="none">
+		<part name="cv17.36"/> 
+		<part name="cv18.35"/> 
+		<part name="cv19.34"/> 
+		<part name="cv20.33"/> 
+	</rom>
+	<rom index="2" zip="sicv.zip" md5="none">
+		<part name="cv01.1"/> 
+		<part name="cv02.2"/> 
+	</rom>
+</misterromdescription>

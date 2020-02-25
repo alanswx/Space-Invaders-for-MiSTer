@@ -12,4 +12,10 @@
 		<part name="lrescue.5"/> 
 		<part name="lrescue.6"/> 
 	</rom>
+
+        <rom index="2" zip="lrescue.zip" md5="none">
+                <part name="7643-1.cpu"/>
+                <part name="7643-1.cpu"/>
+        </rom>
+
 </misterromdescription>

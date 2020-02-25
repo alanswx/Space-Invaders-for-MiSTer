@@ -1,0 +1,18 @@
+<misterromdescription>
+        <rbf>Invaders</rbf>
+	<rom index="1" >
+		<part> 0A </part>
+	</rom>
+	<buttons names="Fire,-,-,-,Start 1P,Start 2P,Coin" default="A,Start,Select,R"/>
+	<rom index="0" zip="invadpt2.zip" md5="none">
+		<part name="pv01"/> 
+		<part name="pv02"/> 
+		<part name="pv03"/> 
+		<part name="pv04"/> 
+		<part name="pv05"/> 
+	</rom>
+	<rom index="2" zip="invadpt2.zip" md5="none">
+		<part name="pv06.1"/> 
+		<part name="pv07.2"/> 
+	</rom>
+</misterromdescription>

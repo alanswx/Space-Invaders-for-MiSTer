@@ -12,4 +12,10 @@
 		<part name="mw05"/> 
 		<part name="mw06"/> 
 	</rom>
+
+        <rom index="2" zip="ozmawars.zip" md5="none">
+                <part name="01.1"/>
+                <part name="02.2"/>
+        </rom>
+
 </misterromdescription>

@@ -1,0 +1,25 @@
+<misterromdescription>
+        <rbf>Invaders</rbf>
+	<rom index="1" >
+		<part> 07 </part>
+	</rom>
+	<buttons names="Fire,-,-,-,Start 1P,Start 2P,Coin" default="A,Start,Select,R"/>
+	<rom index="0" zip="moonbase.zip" md5="none">
+		<part name="ze3-1.a4"/> 
+		<part name="ze3-2.c4"/> 
+		<part name="ze3-3.e4"/> 
+		<part name="ze3-4.f4"/> 
+		<part name="ze3-5.h4"/> 
+		<part name="ze3-6.l4"/> 
+		<part name="ze3-7.a5"/> 
+		<part name="ze3-8.c5"/> 
+		<part name="ze3-9.e5"/> 
+		<part name="ze3-10.f5"/> 
+	</rom>
+
+        <rom index="2" zip="moonbase.zip" md5="none">
+                <part name="cv02.h7"/>
+                <part name="cv01.g7"/>
+        </rom>
+
+</misterromdescription>

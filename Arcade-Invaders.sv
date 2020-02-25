@@ -381,6 +381,7 @@ localparam mod_lunarrescue   = 6;
 localparam mod_ozmawars      = 7;
 localparam mod_spacelaser    = 8;
 localparam mod_spacewalk     = 9;
+localparam mod_spaceinvaderscv = 10;
 reg [7:0] mod = 0;
 always @(posedge clk_sys) if (ioctl_wr & (ioctl_index==1)) mod <= ioctl_dout;
 
@@ -392,10 +393,13 @@ always @(posedge clk_sys) if (ioctl_wr && (ioctl_index==254) && !ioctl_addr[24:3
 
 reg landscape;
 reg ccw;
+reg color_rom_enabled;
+
 always @(*) begin
 
         landscape <= 1;
-		  ccw<=0;
+        ccw<=0;
+        color_rom_enabled<=0;
         GDB0 <= 8'hFF;
         GDB1 <= 8'hFF;
         GDB2 <= 8'hFF;
@@ -448,6 +452,7 @@ always @(*) begin
 		  mod_lunarrescue:
 		  begin
 		  	 landscape<=0;
+          color_rom_enabled<=1;
           ccw<=1;
           GDB0 <= sw[0] | ~{ 1'b0, m_right,m_left,m_fire_a,1'b0,1'b1, 1'b1,1'b1};
           GDB1 <= sw[1] | ~{ 1'b0, m_right,m_left,m_fire_a,1'b0,m_start1, m_start2, m_coin1 };
@@ -457,6 +462,7 @@ always @(*) begin
 		  begin
  		  	 landscape<=0;
           ccw<=1;
+          color_rom_enabled<=1;
          // GDB0 <= sw[0] | ~{ 1'b0, m_right,m_left,m_fire_a,1'b0,1'b1, 1'b1,1'b1};
           GDB1 <= sw[1] | ~{ 1'b0, m_right,m_left,m_fire_a,1'b0,m_start1, m_start2, ~m_coin1 };
           GDB2 <= sw[2] | ~{ m_start1, m_coin1,m_start2,1'b0,1'b0,1'b0, 1'b0, 1'b0 };
@@ -466,6 +472,7 @@ always @(*) begin
 		  begin
   		  	 landscape<=0;
           ccw<=1;
+          color_rom_enabled<=1;
         // GDB0 <= sw[0] | ~{ 1'b0, m_right,m_left,m_fire_a,1'b0,1'b1, 1'b1,1'b1};
           GDB1 <= sw[1] | ~{ 1'b0, m_right,m_left,m_fire_a,1'b0,m_start1, m_start2, m_coin1 };
           GDB2 <= sw[2] | ~{ 1'b0, m_right,m_left,m_fire_a,1'b1,1'b1, 1'b1, 1'b1 };
@@ -476,6 +483,15 @@ always @(*) begin
          GDB1 <= sw[1] | ~{ 1'b0, 1'b0,1'b0,1'b0,m_start1, m_start2, m_coin1 , 1'b0};
 			GDB2 <= 8'b0;
 		  end
+		  mod_spaceinvaderscv:
+		  begin
+	 landscape<=0;
+          ccw<=1;
+          color_rom_enabled<=1;
+	GDB0 <= sw[0] | { 1'b0, 1'b0,1'b0,1'b0,1'b0,1'b0, 1'b0,1'b0};
+          GDB1 <= sw[1] | { 1'b1, m_right,m_left,m_fire_a,1'b1,m_start1, m_start2, m_coin1 };
+          GDB2 <= sw[2] | { 1'b1, m_right,m_left,m_fire_a,1'b0,1'b0, 1'b0, 1'b0 };
+        end
 		  endcase
 end
 
@@ -495,7 +511,8 @@ invaders_top invaders_top
 
 	.dn_addr(ioctl_addr[15:0]),
 	.dn_data(ioctl_dout),
-	.dn_wr(ioctl_wr&(ioctl_index==0)),
+	.dn_wr(ioctl_wr&(ioctl_index==0 || ioctl_index==2)),
+	.dn_index(ioctl_index),
 
 	.r(r),
 	.g(g),
@@ -511,7 +528,8 @@ invaders_top invaders_top
 	.sh_col(sh_col),
 	.sc1_col(sc1_col),
 	.sc2_col(sc2_col),
-	.mn_col(mn_col)
+	.mn_col(mn_col),
+	.color_rom_enabled(color_rom_enabled)
 	
 
 );
